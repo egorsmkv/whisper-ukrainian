@@ -1,0 +1,13 @@
+[[source]]
+url = "https://pypi.python.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+datasets = ">=2.6.1"
+evaluate = "*"
+transformers = {git = "https://github.com/huggingface/transformers.git"}
+librosa = "*"
+jiwer = "*"
+torch = "*"
+tensorboard = "*"
