@@ -29,7 +29,7 @@ def map_to_pred(batch):
 
     return batch
 
-result = librispeech_eval.map(map_to_pred, batched=True, batch_size=1)
+result = test_set.map(map_to_pred, batched=True, batch_size=1)
 
 wer = load("wer")
 
