@@ -12,21 +12,21 @@ from datasets import load_dataset, DatasetDict
 
 # DATA LOADING
 
-common_voice = DatasetDict()
+asr_dataset = DatasetDict()
 
-train_set = load_dataset("csv", data_files='/home/yehor/ext-disk/whisper-ukrainian/data/train.csv', cache_dir='./data/cache')['train']
-test_set = load_dataset("csv", data_files='/home/yehor/ext-disk/whisper-ukrainian/data/testset.csv',  cache_dir='./data/cache')['train']
+train_set = load_dataset("csv", data_files='/home/ubuntu/data/train.csv', cache_dir='./data/cache')['train']
+test_set = load_dataset("csv", data_files='/home/ubuntu/data/test.csv',  cache_dir='./data/cache')['train']
 
 print(train_set)
 print('---')
 print(test_set)
 
-common_voice["train"] = train_set
-common_voice["test"] = test_set
+asr_dataset["train"] = train_set
+asr_dataset["test"] = test_set
 
 print('***')
 
-print(common_voice)
+print(asr_dataset)
 
 # FINE TUNING
 
@@ -34,6 +34,15 @@ feature_extractor = WhisperFeatureExtractor.from_pretrained("openai/whisper-smal
 tokenizer = WhisperTokenizer.from_pretrained("openai/whisper-small", language="Ukrainian", task="transcribe")
 processor = WhisperProcessor.from_pretrained("openai/whisper-small", language="Ukrainian", task="transcribe")
 model = WhisperForConditionalGeneration.from_pretrained("openai/whisper-small")
+
+model.config.forced_decoder_ids = None
+model.config.suppress_tokens = []
+model.config.max_length = 500
+
+max_label_length = model.config.max_length
+
+MAX_DURATION_IN_SECONDS = 30.0
+max_input_length = MAX_DURATION_IN_SECONDS * 16000
 
 
 def prepare_dataset(batch):
@@ -43,12 +52,33 @@ def prepare_dataset(batch):
     # compute log-Mel input features from input audio array 
     batch["input_features"] = feature_extractor(audio, sampling_rate=16_000).input_features[0]
 
+    # compute input length
+    batch["input_length"] = len(batch["input_features"])
+
     # encode target text to label ids 
     batch["labels"] = tokenizer(batch["sentence"]).input_ids
 
+    # compute labels length **with** special tokens! -> total label length
+    batch["labels_length"] = len(batch["labels"])
+
     return batch
 
-common_voice = common_voice.map(prepare_dataset, remove_columns=common_voice.column_names["train"], num_proc=4)
+
+def filter_inputs(input_length):
+    """Filter inputs with zero input length or longer than 30s"""
+    return 0 < input_length < max_input_length
+
+
+def filter_labels(labels_length):
+    """Filter label sequences longer than max length (448)"""
+    return labels_length < max_label_length
+
+
+asr_dataset = asr_dataset.map(prepare_dataset, remove_columns=asr_dataset.column_names["train"], num_proc=4)
+
+asr_dataset = asr_dataset.filter(filter_inputs, input_columns=["input_length"])
+
+asr_dataset = asr_dataset.filter(filter_labels, input_columns=["labels_length"])
 
 
 @dataclass
@@ -98,8 +128,6 @@ def compute_metrics(pred):
 
     return {"wer": wer}
 
-model.config.forced_decoder_ids = None
-model.config.suppress_tokens = []
 
 training_args = Seq2SeqTrainingArguments(
     output_dir="./whisper-small-uk",
@@ -127,8 +155,8 @@ training_args = Seq2SeqTrainingArguments(
 trainer = Seq2SeqTrainer(
     args=training_args,
     model=model,
-    train_dataset=common_voice["train"],
-    eval_dataset=common_voice["test"],
+    train_dataset=asr_dataset["train"],
+    eval_dataset=asr_dataset["test"],
     data_collator=data_collator,
     compute_metrics=compute_metrics,
     tokenizer=processor.feature_extractor,
