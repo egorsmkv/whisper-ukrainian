@@ -29,13 +29,12 @@ def map_to_pred(batch):
     input_features = input_features.to('cuda')
     try:
         generated_ids = model.generate(inputs=input_features)
-        
+
         transcription = processor.batch_decode(generated_ids, normalize=True, skip_special_tokens=True)
 
         batch['text'] = [processor.tokenizer._normalize(it) for it in transcription]
-        batch["transcription"] = batch['sentence']
 
-        print('Ground truth:', batch["transcription"])
+        print('Ground truth:', batch["sentence"])
         print('Predicted text:', batch["text"])
 
     except IndexError:
@@ -46,15 +45,15 @@ def map_to_pred(batch):
           File "/home/ubuntu/.local/lib/python3.8/site-packages/transformers/generation/utils.py", line 2295, in greedy_search
             next_token_logits = outputs.logits[:, -1, :]
         """
-        
+
         # just a trick to pass the issue
         batch['text'] = ['-'] * len(batch['path'])
-        batch["transcription"] = ['-'] * len(batch['path'])
-    
+        batch["sentence"] = ['-'] * len(batch['path'])
+
     return batch
 
 result = test_set.map(map_to_pred, batched=True, batch_size=50)
 
 wer = load("wer")
 
-print(wer.compute(predictions=test_set["text"], references=test_set["transcription"]))
+print(wer.compute(predictions=result["text"], references=result["sentence"]))
