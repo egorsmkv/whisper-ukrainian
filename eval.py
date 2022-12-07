@@ -48,8 +48,8 @@ def map_to_pred(batch):
         """
         
         # just a trick to pass the issue
-        batch['text'] = ['-' * len(batch['path'])]
-        batch["transcription"] = ['-' * len(batch['path'])]
+        batch['text'] = ['-'] * len(batch['path'])
+        batch["transcription"] = ['-'] * len(batch['path'])
     
     return batch
 
