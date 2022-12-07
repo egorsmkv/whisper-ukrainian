@@ -6,8 +6,8 @@ from evaluate import load
 from transformers import WhisperForConditionalGeneration, WhisperProcessor
 from datasets import load_dataset
 
-model = WhisperForConditionalGeneration.from_pretrained("openai/whisper-small")
-processor = WhisperProcessor.from_pretrained("openai/whisper-small")
+model = WhisperForConditionalGeneration.from_pretrained("/home/ubuntu/whisper-ukrainian/whisper-small-uk/checkpoint-2000")
+processor = WhisperProcessor.from_pretrained("/home/ubuntu/whisper-ukrainian/whisper-small-uk/checkpoint-2000")
 
 test_set = load_dataset("csv", data_files='/home/ubuntu/data/test.csv',  cache_dir='./data/cache')['train']
 
