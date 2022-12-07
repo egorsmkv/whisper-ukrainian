@@ -27,21 +27,28 @@ def map_to_pred(batch):
 
     input_features = processor(audios, return_tensors="pt", sampling_rate=16_000).input_features
     input_features = input_features.to('cuda')
-    generated_ids = model.generate(inputs=input_features)
+    try:
+        generated_ids = model.generate(inputs=input_features)
+        
+        transcription = processor.batch_decode(generated_ids, normalize=True, skip_special_tokens=True)
 
-    # with torch.no_grad():
-    #    generated_ids = model.generate(input_ids=input_features)
-    #    #logits = model(input_features.to("cuda")).logits
+        batch['text'] = [processor.tokenizer._normalize(it) for it in batch['sentence']]
+        batch["transcription"] = transcription
 
-    #predicted_ids = torch.argmax(logits, dim=-1)
-    transcription = processor.batch_decode(generated_ids, normalize=True, skip_special_tokens=True)
+        print('Predicted text:', batch["transcription"])
+        print('Ground truth:', batch["text"])
 
-    batch['text'] = [processor.tokenizer._normalize(it) for it in batch['sentence']]
-    batch["transcription"] = transcription
-
-    print('Predicted text:', batch["transcription"])
-    print('Ground truth:', batch["text"])
-
+    except IndexError:
+        # just pass an issue: IndexError: index -1 is out of bounds for dimension 1 with size 0
+        """
+        File "/home/ubuntu/.local/lib/python3.8/site-packages/transformers/generation/utils.py", line 1518, in generate
+            return self.greedy_search(
+          File "/home/ubuntu/.local/lib/python3.8/site-packages/transformers/generation/utils.py", line 2295, in greedy_search
+            next_token_logits = outputs.logits[:, -1, :]
+        """
+        batch['text'] = ['-']
+        batch["transcription"] = ['-']
+    
     return batch
 
 result = test_set.map(map_to_pred, batched=True, batch_size=20)
