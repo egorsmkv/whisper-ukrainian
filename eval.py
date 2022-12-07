@@ -32,11 +32,11 @@ def map_to_pred(batch):
         
         transcription = processor.batch_decode(generated_ids, normalize=True, skip_special_tokens=True)
 
-        batch['text'] = [processor.tokenizer._normalize(it) for it in batch['sentence']]
-        batch["transcription"] = transcription
+        batch['text'] = [processor.tokenizer._normalize(it) for it in transcription]
+        batch["transcription"] = batch['sentence']
 
-        print('Predicted text:', batch["transcription"])
-        print('Ground truth:', batch["text"])
+        print('Ground truth:', batch["transcription"])
+        print('Predicted text:', batch["text"])
 
     except IndexError:
         # just pass an issue: IndexError: index -1 is out of bounds for dimension 1 with size 0
@@ -57,4 +57,4 @@ result = test_set.map(map_to_pred, batched=True, batch_size=50)
 
 wer = load("wer")
 
-print(wer.compute(predictions=ds["text"], references=ds["transcription"]))
+print(wer.compute(predictions=test_set["text"], references=test_set["transcription"]))
