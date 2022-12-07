@@ -51,7 +51,7 @@ def map_to_pred(batch):
     
     return batch
 
-result = test_set.map(map_to_pred, batched=True, batch_size=20)
+result = test_set.map(map_to_pred, batched=True, batch_size=50)
 
 wer = load("wer")
 
