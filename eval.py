@@ -46,8 +46,10 @@ def map_to_pred(batch):
           File "/home/ubuntu/.local/lib/python3.8/site-packages/transformers/generation/utils.py", line 2295, in greedy_search
             next_token_logits = outputs.logits[:, -1, :]
         """
-        batch['text'] = ['-']
-        batch["transcription"] = ['-']
+        
+        # just a trick to pass the issue
+        batch['text'] = ['-' * len(batch['path'])]
+        batch["transcription"] = ['-' * len(batch['path'])]
     
     return batch
 
