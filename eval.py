@@ -39,8 +39,8 @@ def map_to_pred(batch):
     batch['text'] = [processor.tokenizer._normalize(it) for it in batch['sentence']]
     batch["transcription"] = transcription
 
-    print('Ground truth:', batch["transcription"])
-    print('Predicted text:', batch["text"])
+    print('Predicted text:', batch["transcription"])
+    print('Ground truth:', batch["text"])
 
     return batch
 
