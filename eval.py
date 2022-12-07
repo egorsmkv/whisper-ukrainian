@@ -6,27 +6,39 @@ from evaluate import load
 from transformers import WhisperForConditionalGeneration, WhisperProcessor
 from datasets import load_dataset
 
-model = WhisperForConditionalGeneration.from_pretrained("/home/ubuntu/whisper-ukrainian/whisper-small-uk/checkpoint-2000")
-processor = WhisperProcessor.from_pretrained("/home/ubuntu/whisper-ukrainian/whisper-small-uk/checkpoint-2000")
+print('libs loaded')
+
+model = WhisperForConditionalGeneration.from_pretrained("/home/ubuntu/whisper-ukrainian/whisper-small-uk/checkpoint-test")
+model.to('cuda')
+processor = WhisperProcessor.from_pretrained("/home/ubuntu/whisper-ukrainian/whisper-small-uk/checkpoint-test")
+
+print('models loaded')
 
 test_set = load_dataset("csv", data_files='/home/ubuntu/data/test.csv',  cache_dir='./data/cache')['train']
 
+print('dataset loaded')
 
 def map_to_pred(batch):
-    # load a file
-    audio, sr = librosa.load(batch['path'])
+    # load files
+    audios = []
+    for path in batch['path']:
+        audio, _ = librosa.load(path)
+        audios.append(audio)
 
-    input_features = processor(audio, return_tensors="pt").input_features
+    input_features = processor(audios, return_tensors="pt", sampling_rate=16_000).input_features
+    input_features = input_features.to('cuda')
+    generated_ids = model.generate(inputs=input_features)
 
-    with torch.no_grad():
-        logits = model(input_features.to("cuda")).logits
+    # with torch.no_grad():
+    #    generated_ids = model.generate(input_ids=input_features)
+    #    #logits = model(input_features.to("cuda")).logits
 
-    predicted_ids = torch.argmax(logits, dim=-1)
-    transcription = processor.batch_decode(predicted_ids, normalize = True)
+    #predicted_ids = torch.argmax(logits, dim=-1)
+    transcription = processor.batch_decode(generated_ids, normalize=True, skip_special_tokens=True)
 
-    batch['text'] = processor.tokenizer._normalize(batch['text'])
+    batch['text'] = [processor.tokenizer._normalize(it) for it in batch['sentence']]
     batch["transcription"] = transcription
-    
+
     print('Ground truth:', batch["transcription"])
     print('Predicted text:', batch["text"])
 
