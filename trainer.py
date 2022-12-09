@@ -76,9 +76,8 @@ def filter_labels(labels_length):
 
 asr_dataset = asr_dataset.map(prepare_dataset, remove_columns=asr_dataset.column_names["train"], num_proc=4)
 
-asr_dataset = asr_dataset.filter(filter_inputs, input_columns=["input_length"])
-
-asr_dataset = asr_dataset.filter(filter_labels, input_columns=["labels_length"])
+# asr_dataset = asr_dataset.filter(filter_inputs, input_columns=["input_length"])
+# asr_dataset = asr_dataset.filter(filter_labels, input_columns=["labels_length"])
 
 
 @dataclass
