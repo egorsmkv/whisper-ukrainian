@@ -16,3 +16,7 @@ path,sentence
 2. Edit `trainer.py` to select preferred model size and to fix paths to your CSV files
 
 3. Run `python3 trainer.py`
+
+## Results
+
+- Fine-tuned small Whisper model: https://huggingface.co/Yehor/whisper-small-ukrainian
